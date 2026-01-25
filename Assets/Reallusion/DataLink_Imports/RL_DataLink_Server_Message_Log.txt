@@ -1,0 +1,55 @@
+HELLO 1/25/2026 9:51:19 AM VALID
+{
+  "Application": "Character Creator",
+  "Version": [
+    5,
+    5,
+    1305
+  ],
+  "Path": "C:\\Users\\mxwie\\Documents\\Reallusion\\DataLink",
+  "Plugin": "2.2.1",
+  "Exe": "C:\\Program Files\\Reallusion\\Character Creator 5\\Bin64\\CharacterCreator.exe"
+}
+
+NOTIFY 1/25/2026 9:51:19 AM VALID
+{
+  "message": "Connected"
+}
+
+NOTIFY 1/25/2026 9:52:36 AM VALID
+{
+  "message": "Request"
+}
+
+REQUEST 1/25/2026 9:52:36 AM VALID
+{
+  "type": "ACTORS",
+  "actors": [
+    {
+      "name": "RootNode",
+      "type": "AVATAR",
+      "link_id": "M69SK2R8BG0I5QLFMHHW"
+    }
+  ]
+}
+
+NOTIFY 1/25/2026 9:52:36 AM VALID
+{
+  "message": "Exporting Avatar: RootNode"
+}
+
+NOTIFY 1/25/2026 9:52:50 AM VALID
+{
+  "message": "Avatar Import: RootNode"
+}
+
+CHARACTER 1/25/2026 9:52:50 AM VALID
+{
+  "path": "C:\\Users\\mxwie\\Documents\\Software\\Exercise5\\UnityExercise5\\RL_DataLink\\imports\\RootNode\\RootNode.fbx",
+  "remote_id": "",
+  "name": "RootNode",
+  "type": "AVATAR",
+  "link_id": "M69SK2R8BG0I5QLFMHHW",
+  "motion_prefix": ""
+}
+
