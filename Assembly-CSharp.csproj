@@ -66,8 +66,10 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/MainMenuScripts/MainMenu.cs" />
     <Compile Include="Assets/Scripts/MainMenuScripts/PersonalizeMenu.cs" />
+    <Compile Include="Assets/Scripts/Analysis/AnalysisMenuController.cs" />
     <Compile Include="Assets/Scripts/MainMenuScripts/SettingsMenuController.cs" />
     <Compile Include="Assets/Scripts/MainMenuScripts/SelectModeMenu.cs" />
+    <Compile Include="Assets/Scripts/Interview/QuickMenuController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
