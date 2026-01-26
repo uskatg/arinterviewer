@@ -8,7 +8,7 @@ public class GroqApiClient : MonoBehaviour
 {
     [Header("Groq Settings")]
     [Tooltip("Input your Groq API Key")]
-    public string apiKey = "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";
+    public string apiKey = "";
 
     private string modelName = "llama-3.1-8b-instant";
     private string apiUrl = "https://api.groq.com/openai/v1/chat/completions";
