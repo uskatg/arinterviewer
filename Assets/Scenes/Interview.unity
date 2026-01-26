@@ -2824,7 +2824,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1091312b9175fab4181158efc7307fda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GroqApiClient
-  apiKey: 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
+  apiKey: 
 --- !u!4 &1712025952
 Transform:
   m_ObjectHideFlags: 0
