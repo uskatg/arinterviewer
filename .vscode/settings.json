@@ -51,5 +51,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "ARInterviewerMenu.sln"
+    "dotnet.defaultSolution": "AR Interviewer avatar setup (2 animations + basic rigging).sln"
 }
