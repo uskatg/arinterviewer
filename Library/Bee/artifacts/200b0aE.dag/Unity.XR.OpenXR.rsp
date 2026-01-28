@@ -118,9 +118,11 @@
 -define:ENABLE_INPUT_SYSTEM
 -define:ENABLE_LEGACY_INPUT_MANAGER
 -define:TEXTCORE_FONT_ENGINE_1_5_OR_NEWER
+-define:UNITY_PIPELINE_URP
 -define:UNITY_ANALYTICS
 -define:INPUT_SYSTEM_POSE_VALID
 -define:INPUT_SYSTEM_BINDING_VALIDATOR
+-define:UNITY_RENDER_PIPELINES_UNIVERSAL
 -define:UNITY_VIDEO
 -define:CSHARP_7_OR_LATER
 -define:CSHARP_7_3_OR_NEWER
@@ -355,6 +357,7 @@
 -r:"Library/PackageCache/com.unity.visualscripting@1.9.4/Editor/VisualScripting.Core/EditorAssetResources/Unity.VisualScripting.TextureAssets.dll"
 -r:"Library/PackageCache/com.unity.visualscripting@1.9.4/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll"
 -r:"Library/Bee/artifacts/200b0aE.dag/Unity.InputSystem.ref.dll"
+-r:"Library/Bee/artifacts/200b0aE.dag/Unity.RenderPipelines.Universal.Runtime.ref.dll"
 -r:"Library/Bee/artifacts/200b0aE.dag/Unity.XR.Management.Editor.ref.dll"
 -r:"Library/Bee/artifacts/200b0aE.dag/Unity.XR.Management.ref.dll"
 -r:"Library/Bee/artifacts/200b0aE.dag/UnityEditor.UI.ref.dll"

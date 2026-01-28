@@ -15,4 +15,5 @@ EditorBuildSettings:
     path: Assets/Scenes/Analysis.unity
     guid: ac183ddd783914b259436635bccb1e41
   m_configObjects:
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 64c27f0e2a332ba4e84daabcd2dd9cdc, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 3e1441232b0424b89a713aacc6cdba17, type: 2}

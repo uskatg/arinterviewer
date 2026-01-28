@@ -727,7 +727,7 @@ ModelImporter:
     - name: LeftFoot
       parentName: LeftLeg
       position: {x: 0.0030602221, y: 0.429873, z: -0.002075404}
-      rotation: {x: 0.59892094, y: 0.08547815, z: 0.013871543, w: 0.79611224}
+      rotation: {x: 0.598921, y: 0.08547816, z: 0.013871544, w: 0.7961123}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftToeBase
       parentName: LeftFoot
@@ -792,7 +792,7 @@ ModelImporter:
     - name: LeftForeArm
       parentName: LeftArm
       position: {x: 0.025329573, y: 0.2782609, z: -0.0016672087}
-      rotation: {x: 0.0013020706, y: -0.45452005, z: 0.0425563, w: -0.88971835}
+      rotation: {x: 0.0013020707, y: -0.45452008, z: 0.042556304, w: -0.8897184}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftForeArm1
       parentName: LeftForeArm
@@ -872,7 +872,7 @@ ModelImporter:
     - name: LeftHandRing1
       parentName: LeftHand
       position: {x: -0.020759633, y: 0.072116666, z: -0.0062331464}
-      rotation: {x: 0.045994222, y: 0.21483356, z: 0.01375779, w: 0.97547}
+      rotation: {x: 0.045994226, y: 0.21483357, z: 0.013757791, w: 0.97547007}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftHandRing2
       parentName: LeftHandRing1
@@ -897,7 +897,7 @@ ModelImporter:
     - name: LeftHandThumb2
       parentName: LeftHandThumb1
       position: {x: 0.00045738945, y: 0.0466161, z: -0.000094265255}
-      rotation: {x: 0.008271543, y: 0.21004167, z: 0.02908032, w: 0.9772248}
+      rotation: {x: 0.008271544, y: 0.21004169, z: 0.029080322, w: 0.9772249}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftHandThumb3
       parentName: LeftHandThumb2
@@ -952,7 +952,7 @@ ModelImporter:
     - name: RightArm
       parentName: RightShoulder
       position: {x: 0.02392772, y: 0.09531998, z: -0.018320154}
-      rotation: {x: 0.02641082, y: 0.123579115, z: -0.15256509, w: 0.98018086}
+      rotation: {x: 0.026410822, y: 0.12357912, z: -0.1525651, w: 0.9801809}
       scale: {x: 1, y: 1, z: 1}
     - name: RightForeArm
       parentName: RightArm
@@ -1042,7 +1042,7 @@ ModelImporter:
     - name: RightHandRing2
       parentName: RightHandRing1
       position: {x: 0.0002641418, y: 0.049292583, z: 0.0002057723}
-      rotation: {x: 0.01719582, y: 0.0015070133, z: -0.0063924068, w: 0.99983054}
+      rotation: {x: 0.017195823, y: 0.0015070135, z: -0.006392407, w: 0.9998306}
       scale: {x: 1, y: 1, z: 1}
     - name: RightHandRing3
       parentName: RightHandRing2
