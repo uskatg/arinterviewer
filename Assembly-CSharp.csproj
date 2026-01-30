@@ -1250,7 +1250,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Oculus.LipSync.Editor.csproj" />
-    <ProjectReference Include="Unity.Toonshader.Editor.csproj" />
     <ProjectReference Include="Oculus.LipSync.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

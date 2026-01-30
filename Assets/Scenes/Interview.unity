@@ -1971,6 +1971,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2100000, guid: 75ed6d557417644d7970ed946be0d91a, type: 2}
     - target: {fileID: 5866666021909216657, guid: 572b1721a6eec4abc9d7514c778199c1, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 572b1721a6eec4abc9d7514c778199c1, type: 3}
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 3a82a5a681ed249c198d2cda150ce229, type: 2}
@@ -3603,7 +3607,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f43c520a9bad8a3489109c869f454576, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 2006133300}
   provider: 1
   enableAcceleration: 1
   enableKeyboardInput: 0
@@ -3628,7 +3632,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -3725,8 +3729,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02d5ed157083b494e85013bad8fd5e12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioSource: {fileID: 0}
-  enableMicSelectionGUI: 0
+  audioSource: {fileID: 2006133300}
+  enableMicSelectionGUI: 1
   micSelectionGUIKey: 109
   micInputVolume: 100
   micFrequency: 48000
