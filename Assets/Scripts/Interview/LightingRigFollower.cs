@@ -11,7 +11,7 @@ public class LightingRigFollower : MonoBehaviour
 
     void LateUpdate()
     {
-        Debug.Log("LightingRigFollower running");
+        //Debug.Log("LightingRigFollower running");
         if (!head || !avatarRoot) return;
 
         // position rig relative to avatar
