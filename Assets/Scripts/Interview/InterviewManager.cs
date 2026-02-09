@@ -5,6 +5,7 @@ using Oculus.Voice;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+//using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,6 +13,7 @@ using UnityEngine.Networking;
 
 public class InterviewManager : MonoBehaviour
 {
+    [SerializeField] private GameObject loadingOverlay;
     [Header("Configuration")]
     public string backendUrl = "http://127.0.0.1:8000/v1/interview";
 
@@ -85,8 +87,38 @@ public class InterviewManager : MonoBehaviour
         StartCoroutine(ReplyAndGetNextRoutine(transcript));
     }
 
+    private void ClearChatUI() 
+    {
+        // Logic to destroy old chat bubbles or clear TextMeshPro fields
+        Debug.Log("Clearing old chat UI elements and console logs for new session.");
+
+    }
+    public void OnStartNewInterviewClicked()
+    {
+        // 1. Stop everything currently happening
+        StopAllCoroutines(); // Stops any pending API calls
+        if (ttsSpeaker != null) ttsSpeaker.Stop(); // Stop the AI from talking
+        if (voiceExperience != null) voiceExperience.Deactivate(); // Stop the mic
+
+        // 2. Visual Feedback
+        if (loadingOverlay != null) loadingOverlay.SetActive(true);
+        ClearChatUI();
+
+        // 3. Reuse your existing Routine
+        StartCoroutine(RestartFlow());
+    }
+
+    private IEnumerator RestartFlow()
+    {
+        // Reuse your existing initialization logic
+        yield return StartCoroutine(InitSessionRoutine());
+
+        // Hide the overlay once the new session is ready
+        if (loadingOverlay != null) loadingOverlay.SetActive(false);
+    }
     private IEnumerator InitSessionRoutine()
     {
+        if (loadingOverlay != null) loadingOverlay.SetActive(true);
         InterviewInitRequest req = new InterviewInitRequest
         {
             job_position = "Software Developer",
@@ -104,6 +136,8 @@ public class InterviewManager : MonoBehaviour
             currentSessionId = resObj.session_id;
             Debug.Log($"Session Init Success: {resObj.message} (ID: {currentSessionId})");
 
+            // 2. Hide the overlay only AFTER the request succeeds
+            if (loadingOverlay != null) loadingOverlay.SetActive(false);
             StartCoroutine(GetNextQuestionRoutine());
         });
     }
