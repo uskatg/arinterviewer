@@ -1,9 +1,18 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class QuickMenuController : MonoBehaviour
+
 {
+    [Header("Scene Objects")]
+    [SerializeField] private GameObject menuEmpty;
+    [SerializeField] private GameObject interviewEmpty;
+    [SerializeField] private GameObject analysisEmpty;
+
+    [Header("Restart Target (IMPORTANT)")]
+    [Tooltip("A CHILD of Interview that contains the session content to reset (e.g., AvatarRoot). Do NOT set this to the Interview root.")]
+    [SerializeField] private GameObject interviewContentRoot;
+
     [Header("References")]
     [SerializeField] private GameObject quickPanel;
     [SerializeField] private CanvasGroup panelGroup;
@@ -14,28 +23,28 @@ public class QuickMenuController : MonoBehaviour
 
     [Header("Pause Behavior")]
     [SerializeField] private bool pauseTimeWhenOpen = true;
-
-    [Header("Scene Names")]
-    [SerializeField] private string mainMenuSceneName = "MainMenu";
-    [SerializeField] private string analysisSceneName = "Analysis"; //
+    [Header("UI Objects")]
+    [SerializeField] private GameObject quickToggle;
 
     private bool isOpen;
     private Coroutine animRoutine;
+    private Vector3 baseScale;
 
     private void Awake()
     {
-        if (quickPanel != null && panelGroup == null)
-            panelGroup = quickPanel.GetComponent<CanvasGroup>();
+        if (quickPanel != null)
+        {
+            if (panelGroup == null)
+                panelGroup = quickPanel.GetComponent<CanvasGroup>();
+
+            baseScale = quickPanel.transform.localScale;
+        }
 
         CollapseInstant();
     }
 
     // ---------------- TOGGLE ----------------
-    public void ToggleQuickMenu()
-    {
-        SetOpen(!isOpen);
-    }
-
+    public void ToggleQuickMenu() => SetOpen(!isOpen);
     public void OpenQuickMenu() => SetOpen(true);
     public void CloseQuickMenu() => SetOpen(false);
 
@@ -68,14 +77,17 @@ public class QuickMenuController : MonoBehaviour
         float fromA = panelGroup.alpha;
         float toA = show ? 1f : 0f;
 
+        Vector3 hiddenScale = baseScale * startScale;
+        Vector3 shownScale = baseScale;
+
         Vector3 fromS = quickPanel.transform.localScale;
-        Vector3 toS = show ? Vector3.one : Vector3.one * startScale;
+        Vector3 toS = show ? shownScale : hiddenScale;
 
         if (show)
         {
-            quickPanel.transform.localScale = Vector3.one * startScale;
-            fromS = quickPanel.transform.localScale;
-            toS = Vector3.one;
+            quickPanel.transform.localScale = hiddenScale;
+            fromS = hiddenScale;
+            toS = shownScale;
         }
 
         panelGroup.interactable = false;
@@ -111,41 +123,68 @@ public class QuickMenuController : MonoBehaviour
         panelGroup.alpha = 0f;
         panelGroup.interactable = false;
         panelGroup.blocksRaycasts = false;
-        quickPanel.transform.localScale = Vector3.one * startScale;
+        quickPanel.transform.localScale = baseScale * startScale;
 
         isOpen = false;
     }
 
     // ---------------- BUTTON ACTIONS ----------------
-    public void Resume()
+    public void Resume() => CloseQuickMenu();
+
+    // ✅ Restart ONLY the session content (NOT Interview root)
+public void Restart()
+{
+    Time.timeScale = 1f;
+    StartCoroutine(RestartRoutine());
+}
+
+private IEnumerator RestartRoutine()
+{
+    // Close the quick menu
+    CloseQuickMenu();
+    yield return new WaitForSecondsRealtime(animDuration);
+
+    // Ensure Interview stays active
+    if (interviewEmpty != null)
+        interviewEmpty.SetActive(true);
+
+    // Reset interview content (child of Interview)
+    if (interviewContentRoot == null)
     {
-        CloseQuickMenu();
+        Debug.LogError("[QuickMenuController] interviewContentRoot is not assigned.");
+        yield break;
     }
 
-    public void Restart()
-    {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
+    interviewContentRoot.SetActive(false);
+    yield return null; // one frame
+    interviewContentRoot.SetActive(true);
 
-    public void OpenSettings()
-    {
-        Debug.Log("Open Settings clicked");
-        // hook into SettingsMenuController later
-    }
+    // ✅ ALWAYS re-enable QuickToggle on restart
+    if (quickToggle != null)
+        quickToggle.SetActive(true);
+}
 
     public void End()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(mainMenuSceneName);
+        StartCoroutine(SwitchStateRoutine(TargetState.Menu));
     }
 
-    // ---------------- NEW: FINISH INTERVIEW ----------------
     public void FinishInterview()
     {
-        Debug.Log("Interview finished → Analysis scene");
-
         Time.timeScale = 1f;
-        SceneManager.LoadScene(analysisSceneName);
+        StartCoroutine(SwitchStateRoutine(TargetState.Analysis));
+    }
+
+    private enum TargetState { Menu, Analysis }
+
+    private IEnumerator SwitchStateRoutine(TargetState target)
+    {
+        CloseQuickMenu();
+        yield return new WaitForSecondsRealtime(animDuration);
+
+        if (menuEmpty != null) menuEmpty.SetActive(target == TargetState.Menu);
+        if (interviewEmpty != null) interviewEmpty.SetActive(false);
+        if (analysisEmpty != null) analysisEmpty.SetActive(target == TargetState.Analysis);
     }
 }

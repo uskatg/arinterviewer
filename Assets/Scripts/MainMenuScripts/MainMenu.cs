@@ -1,18 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-public class menuscript : MonoBehaviour
+public class MenuScript : MonoBehaviour
 {
+    [Header("Scene Objects")]
+    [SerializeField] private GameObject menuEmpty;
+    [SerializeField] private GameObject interviewEmpty;
+
+    [Header("UI Objects")]
+    [SerializeField] private GameObject quickToggle;
+
     public void PlayGame()
     {
-       SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);// this can load the scene number 1 (game)//SceneManager.GetActiveScene().buildIndex +1
+        // Hide menu
+        if (menuEmpty != null)
+            menuEmpty.SetActive(false);
 
+        // Show interview
+        if (interviewEmpty != null)
+            interviewEmpty.SetActive(true);
+
+        // ALWAYS restore QuickToggle when entering Interview
+        if (quickToggle != null)
+            quickToggle.SetActive(true);
     }
+
     public void QuitGame()
     {
-
         Application.Quit();
     }
 }
