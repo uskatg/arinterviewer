@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Meta-SDK_Samples.slnx"
+    "dotnet.defaultSolution": "arinterviewer.slnx"
 }
