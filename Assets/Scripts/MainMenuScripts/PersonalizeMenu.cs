@@ -95,6 +95,7 @@ public class PersonalizeMenu : MonoBehaviour
         PlayerPrefs.SetString(INDEX_PATH_KEY, ProfilesIndexPath);
         PlayerPrefs.Save();
 
+        // IMPORTANT: start hidden (and INACTIVE), so it won't "unhide itself"
         HideInstant();
 
         if (rebuildProfileOnStart)
@@ -171,8 +172,8 @@ public class PersonalizeMenu : MonoBehaviour
             CvResult res = null;
             try { res = JsonUtility.FromJson<CvResult>(json); } catch { }
 
-            // IMPORTANT: If there are no saved profiles on disk, reset counters
-            // so the first new upload becomes "Profile 1" (instead of Profile 12 from old tests).
+            // If there are no saved profiles on disk, reset counters
+            // so the first new upload becomes "Profile 1"
             EnsureCountersAreSaneBeforeCreatingFallbackName();
 
             string title = (!string.IsNullOrEmpty(res?.job_title))
@@ -189,7 +190,6 @@ public class PersonalizeMenu : MonoBehaviour
     {
         if (!resetCountersIfNoProfiles) return;
 
-        // If there is no index file or index contains zero profiles, treat as "no CV uploaded"
         bool hasAnyProfiles = false;
 
         if (File.Exists(ProfilesIndexPath))
@@ -208,13 +208,8 @@ public class PersonalizeMenu : MonoBehaviour
 
         if (!hasAnyProfiles)
         {
-            // Reset fallback naming counter (Profile 1 next time)
             PlayerPrefs.SetInt(PROFILE_COUNTER_KEY, 0);
-
-            // Optional: also reset id counter to keep ids small during testing
-            // If you DON'T want ids to reset, comment this out.
             PlayerPrefs.SetInt(PROFILE_ID_COUNTER_KEY, 0);
-
             PlayerPrefs.Save();
 
             Debug.Log("[CV] No saved profiles detected -> reset PROFILE_COUNTER (and PROFILE_ID counter). Next fallback will be 'Profile 1'.");
@@ -224,7 +219,6 @@ public class PersonalizeMenu : MonoBehaviour
     // ---------- Save per-profile JSON + update index ----------
     private void SaveNewProfile(string json, string displayTitle)
     {
-        // Always load index fresh here (important if file exists but in-memory index is empty)
         LoadIndexFromDisk(forceReload: true);
 
         int newId = GetNextProfileId();
@@ -387,7 +381,7 @@ public class PersonalizeMenu : MonoBehaviour
             return;
         }
 
-        SetProfileSelected(btn, iconImg, selected);
+        SetProfileSelected(iconImg, selected);
 
         if (singleSelect && selected)
             selectedProfileButton = btn;
@@ -403,7 +397,7 @@ public class PersonalizeMenu : MonoBehaviour
             }
 
             UnselectAllProfileIcons();
-            SetProfileSelected(btn, iconImg, true);
+            SetProfileSelected(iconImg, true);
             selectedProfileButton = btn;
 
             index.selectedId = profileId;
@@ -425,7 +419,7 @@ public class PersonalizeMenu : MonoBehaviour
         }
     }
 
-    private void SetProfileSelected(Button btn, Image iconImg, bool selected)
+    private void SetProfileSelected(Image iconImg, bool selected)
     {
         iconImg.sprite = selected ? tickSprite : emptyCircleSprite;
     }
@@ -441,15 +435,27 @@ public class PersonalizeMenu : MonoBehaviour
     private void Animate(bool show)
     {
         if (animRoutine != null) StopCoroutine(animRoutine);
+
+        // If we are about to show, make sure it's active first
+        if (show && personalizePanel != null && !personalizePanel.activeSelf)
+            personalizePanel.SetActive(true);
+
         animRoutine = StartCoroutine(AnimateRoutine(show));
     }
 
     private IEnumerator AnimateRoutine(bool show)
     {
+        if (personalizePanel == null) yield break;
+
+        // Ensure active while animating
         personalizePanel.SetActive(true);
 
+        // If CanvasGroup missing, try to grab it
+        if (panelGroup == null)
+            panelGroup = personalizePanel.GetComponent<CanvasGroup>();
+
         float t = 0f;
-        float fromA = panelGroup.alpha;
+        float fromA = (panelGroup != null) ? panelGroup.alpha : (show ? 0f : 1f);
         float toA = show ? 1f : 0f;
 
         Vector3 fromS = personalizePanel.transform.localScale;
@@ -462,8 +468,11 @@ public class PersonalizeMenu : MonoBehaviour
             toS = Vector3.one;
         }
 
-        panelGroup.interactable = false;
-        panelGroup.blocksRaycasts = false;
+        if (panelGroup != null)
+        {
+            panelGroup.interactable = false;
+            panelGroup.blocksRaycasts = false;
+        }
 
         while (t < animDuration)
         {
@@ -471,25 +480,46 @@ public class PersonalizeMenu : MonoBehaviour
             float p = Mathf.Clamp01(t / animDuration);
             p = p * p * (3f - 2f * p);
 
-            panelGroup.alpha = Mathf.Lerp(fromA, toA, p);
+            if (panelGroup != null)
+                panelGroup.alpha = Mathf.Lerp(fromA, toA, p);
+
             personalizePanel.transform.localScale = Vector3.Lerp(fromS, toS, p);
             yield return null;
         }
 
-        panelGroup.alpha = toA;
-        panelGroup.interactable = show;
-        panelGroup.blocksRaycasts = show;
+        if (panelGroup != null)
+        {
+            panelGroup.alpha = toA;
+            panelGroup.interactable = show;
+            panelGroup.blocksRaycasts = show;
+        }
+
+        // IMPORTANT: when hiding, actually deactivate at the end
+        if (!show)
+            personalizePanel.SetActive(false);
 
         animRoutine = null;
     }
 
     private void HideInstant()
     {
-        personalizePanel.SetActive(true);
-        panelGroup.alpha = 0f;
-        panelGroup.interactable = false;
-        panelGroup.blocksRaycasts = false;
+        if (personalizePanel == null) return;
+
+        // make sure we can set CanvasGroup values safely
+        if (panelGroup == null)
+            panelGroup = personalizePanel.GetComponent<CanvasGroup>();
+
+        if (panelGroup != null)
+        {
+            panelGroup.alpha = 0f;
+            panelGroup.interactable = false;
+            panelGroup.blocksRaycasts = false;
+        }
+
         personalizePanel.transform.localScale = Vector3.one * startScale;
+
+        // IMPORTANT: keep INACTIVE on startup
+        personalizePanel.SetActive(false);
     }
 
     // ---------- File Saving ----------
@@ -515,52 +545,51 @@ public class PersonalizeMenu : MonoBehaviour
             Debug.LogError($"Failed to save CV: {e.Message}");
         }
     }
-   // Clear Button
+
+    // Clear Button
     public void ClearAllProfiles()
-{
-    // 1) Clear UI immediately
-    ClearProfilesContainer();
-
-    // 2) Delete all saved profile JSON files
-    try
     {
-        string dir = Application.persistentDataPath;
-        string[] files = Directory.GetFiles(dir, "cv_profile_*.json");
+        // 1) Clear UI immediately
+        ClearProfilesContainer();
 
-        foreach (var f in files)
+        // 2) Delete all saved profile JSON files
+        try
         {
-            File.Delete(f);
+            string dir = Application.persistentDataPath;
+            string[] files = Directory.GetFiles(dir, "cv_profile_*.json");
+
+            foreach (var f in files)
+                File.Delete(f);
+
+            Debug.Log($"[CV] Deleted {files.Length} profile json file(s).");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[CV] Failed deleting profile json files: " + e.Message);
         }
 
-        Debug.Log($"[CV] Deleted {files.Length} profile json file(s).");
-    }
-    catch (System.Exception e)
-    {
-        Debug.LogError("[CV] Failed deleting profile json files: " + e.Message);
-    }
-
-    // 3) Delete the index file
-    try
-    {
-        if (File.Exists(ProfilesIndexPath))
+        // 3) Delete the index file
+        try
         {
-            File.Delete(ProfilesIndexPath);
-            Debug.Log("[CV] Deleted profiles_index.json");
+            if (File.Exists(ProfilesIndexPath))
+            {
+                File.Delete(ProfilesIndexPath);
+                Debug.Log("[CV] Deleted profiles_index.json");
+            }
         }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[CV] Failed deleting profiles index: " + e.Message);
+        }
+
+        // 4) Reset counters + selection
+        PlayerPrefs.SetInt(PROFILE_COUNTER_KEY, 0);
+        PlayerPrefs.SetInt(PROFILE_ID_COUNTER_KEY, 0);
+        PlayerPrefs.Save();
+
+        // Reset in-memory index
+        index = new ProfilesIndex();
+
+        Debug.Log("[CV] Cleared all profiles. Next upload will start from Profile 1.");
     }
-    catch (System.Exception e)
-    {
-        Debug.LogError("[CV] Failed deleting profiles index: " + e.Message);
-    }
-
-    // 4) Reset counters + selection
-    PlayerPrefs.SetInt(PROFILE_COUNTER_KEY, 0);
-    PlayerPrefs.SetInt(PROFILE_ID_COUNTER_KEY, 0);
-    PlayerPrefs.Save();
-
-    // Reset in-memory index
-    index = new ProfilesIndex();
-
-    Debug.Log("[CV] Cleared all profiles. Next upload will start from Profile 1.");
-}
 }
