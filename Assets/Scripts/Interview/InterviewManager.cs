@@ -9,6 +9,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Networking;
+using System.Text.RegularExpressions;
 
 public class InterviewManager : MonoBehaviour
 {
@@ -16,8 +17,8 @@ public class InterviewManager : MonoBehaviour
     public string backendUrl = "http://127.0.0.1:8000/v1/interview";
 
     [Header("Component Reference")]
-    public AppVoiceExperience voiceExperience;
     public TTSSpeaker ttsSpeaker;
+    public AudioAnalyzer audioAnalyzer;
 
     [Header("Runtime State")]
     public bool isListening = false;
@@ -26,13 +27,33 @@ public class InterviewManager : MonoBehaviour
     [Header("Debug")]
     public bool startOnPlay = true;
 
+    // TTS queue control
+    private Queue<string> _speechQueue = new Queue<string>();
+    private bool _isSpeaking = false;
+    private bool _currentClipFinished = true;
+
     private void Start()
     {
-        if (voiceExperience != null)
+        if (audioAnalyzer == null)
         {
-            voiceExperience.VoiceEvents.OnFullTranscription.AddListener(OnFullTranscription);
-            voiceExperience.VoiceEvents.OnStartListening.AddListener(() => isListening = true);
-            voiceExperience.VoiceEvents.OnStoppedListening.AddListener(() => isListening = false);
+            audioAnalyzer = GetComponent<AudioAnalyzer>();
+            if (audioAnalyzer == null) Debug.LogError("InterviewManager: WARNING! AudioAnalyzer component is missing.");
+            else Debug.Log("InterviewManager: Auto-connected to AudioAnalyzer.");
+        }
+
+        // Subscribe to our new Custom STT event
+        if (audioAnalyzer != null)
+        {
+            audioAnalyzer.OnTranscriptionComplete += OnFullTranscription;
+        }
+
+        // register TTS
+        if (ttsSpeaker != null)
+        {
+            // when one audio finished, turn to true
+            ttsSpeaker.Events.OnAudioClipPlaybackFinished.AddListener((msg) => {
+                _currentClipFinished = true;
+            });
         }
 
         if (startOnPlay)
@@ -43,19 +64,45 @@ public class InterviewManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (voiceExperience != null)
+        if (audioAnalyzer != null)
         {
-            voiceExperience.VoiceEvents.OnFullTranscription.RemoveListener(OnFullTranscription);
+            audioAnalyzer.OnTranscriptionComplete -= OnFullTranscription;
+        }
+
+        if (ttsSpeaker != null)
+        {
+            ttsSpeaker.Events.OnAudioClipPlaybackFinished.RemoveAllListeners();
         }
     }
 
     private void Update()
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && !isListening)
+        bool isDown = false;
+        bool isUp = false;
+
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.spaceKey.wasPressedThisFrame) isDown = true;
+            if (Keyboard.current.spaceKey.wasReleasedThisFrame) isUp = true;
+        }
+
+        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger) ||
+            OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            isDown = true;
+        }
+
+        if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger) ||
+            OVRInput.GetUp(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            isUp = true;
+        }
+
+        if (isDown && !isListening)
         {
             ActivateVoice();
         }
-        else if (Keyboard.current.spaceKey.wasReleasedThisFrame)
+        else if (isUp && isListening)
         {
             StopListening();
         }
@@ -63,26 +110,40 @@ public class InterviewManager : MonoBehaviour
 
     void StopListening()
     {
-        if (voiceExperience == null) return;
-        Debug.Log("Stop recording, sending now...");
         isListening = false;
-        voiceExperience.Deactivate();
+        Debug.Log("Stop recording, sending to AudioAnalyzer...");
+        if (audioAnalyzer != null)
+        {
+            audioAnalyzer.StopRecordingAndAnalyze(false);
+        }
     }
 
     public void ActivateVoice()
     {
-        if (voiceExperience != null)
+        if (_isSpeaking)
         {
-            Debug.Log("Mic Activated...");
-            voiceExperience.Activate();
+            StopAllCoroutines();
+            _speechQueue.Clear();
+            ttsSpeaker.Stop();
+            _isSpeaking = false;
+        }
+
+        isListening = true;
+        Debug.Log("Mic Activated...");
+        if (audioAnalyzer != null)
+        {
+            audioAnalyzer.StartRecording();
         }
     }
 
-    private void OnFullTranscription(string transcript)
+    // Now triggered manually by AudioAnalyzer instead of Wit.ai
+    private void OnFullTranscription(string transcript, string voiceReport)
     {
         if (string.IsNullOrEmpty(currentSessionId)) return;
         Debug.Log($"User said: {transcript}");
-        StartCoroutine(ReplyAndGetNextRoutine(transcript));
+        Debug.Log($"Voice Report: {voiceReport}");
+
+        StartCoroutine(ReplyAndGetNextRoutine(transcript, voiceReport));
     }
 
     private IEnumerator InitSessionRoutine()
@@ -108,12 +169,13 @@ public class InterviewManager : MonoBehaviour
         });
     }
 
-    private IEnumerator ReplyAndGetNextRoutine(string userText)
+    private IEnumerator ReplyAndGetNextRoutine(string userText, string voiceReport)
     {
         InterviewReplyRequest replyReq = new InterviewReplyRequest
         {
             session_id = currentSessionId,
-            user_text = userText
+            user_text = userText,
+            voice_data = voiceReport
         };
 
         yield return PostRequest("/reply", JsonUtility.ToJson(replyReq), (response) =>
@@ -143,7 +205,47 @@ public class InterviewManager : MonoBehaviour
 
     private void Speak(string text)
     {
-        if (ttsSpeaker != null) ttsSpeaker.Speak(text);
+        if (ttsSpeaker == null) return;
+
+        // use regexp to split
+        string[] sentences = Regex.Split(text, @"(?<=[.!?;])");
+
+        foreach (var sentence in sentences)
+        {
+            if (!string.IsNullOrWhiteSpace(sentence))
+            {
+                _speechQueue.Enqueue(sentence.Trim());
+            }
+        }
+
+        if (!_isSpeaking)
+        {
+            StartCoroutine(ProcessSpeechQueue());
+        }
+    }
+
+    private IEnumerator ProcessSpeechQueue()
+    {
+        _isSpeaking = true;
+
+        while (_speechQueue.Count > 0)
+        {
+            string phrase = _speechQueue.Dequeue();
+            _currentClipFinished = false;
+
+            ttsSpeaker.Speak(phrase);
+
+            float timer = 0f;
+            while (!_currentClipFinished && timer < 15f)
+            {
+                timer += Time.deltaTime;
+                yield return null;
+            }
+         
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        _isSpeaking = false;
     }
 
     private IEnumerator PostRequest(string endpoint, string jsonBody, Action<string> onSuccess)
@@ -279,6 +381,7 @@ public class InterviewManager : MonoBehaviour
     {
         public string session_id;
         public string user_text;
+        public string voice_data;
     }
 
     [Serializable]
