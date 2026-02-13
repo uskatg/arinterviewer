@@ -9,12 +9,13 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Networking;
+using UnityEngine.Android;
 using System.Text.RegularExpressions;
 
 public class InterviewManager : MonoBehaviour
 {
     [Header("Configuration")]
-    public string backendUrl = "http://127.0.0.1:8000/v1/interview";
+    public string backendUrl = "http://10.163.65.59:8000/v1/interview";
 
     [Header("Component Reference")]
     public TTSSpeaker ttsSpeaker;
@@ -34,6 +35,11 @@ public class InterviewManager : MonoBehaviour
 
     private void Start()
     {
+        if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+        {
+            Permission.RequestUserPermission(Permission.Microphone);
+        }
+
         if (audioAnalyzer == null)
         {
             audioAnalyzer = GetComponent<AudioAnalyzer>();

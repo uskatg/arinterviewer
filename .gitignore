@@ -97,3 +97,7 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# API Key
+Assets/Resources/openai_api_key.txt
+Assets/Resources/openai_api_key.txt.meta
