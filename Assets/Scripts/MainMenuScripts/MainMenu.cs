@@ -1,31 +1,30 @@
 using UnityEngine;
 
-public class MenuScript : MonoBehaviour
+public class GameStartManager : MonoBehaviour
 {
-    [Header("Scene Objects")]
-    [SerializeField] private GameObject menuEmpty;
-    [SerializeField] private GameObject interviewEmpty;
+    [Header("Drag Objects Here")]
+    public GameObject menuObject;
+    public GameObject interviewObject;
+    public GameObject analysisObject;
 
-    [Header("UI Objects")]
-    [SerializeField] private GameObject quickToggle;
-
-    public void PlayGame()
+    void Start()
     {
-        // Hide menu
-        if (menuEmpty != null)
-            menuEmpty.SetActive(false);
+        // 1. Show the Menu
+        if (menuObject != null)
+        {
+            menuObject.SetActive(true);
+        }
 
-        // Show interview
-        if (interviewEmpty != null)
-            interviewEmpty.SetActive(true);
+        // 2. Hide the Interview
+        if (interviewObject != null)
+        {
+            interviewObject.SetActive(false);
+        }
 
-        // ALWAYS restore QuickToggle when entering Interview
-        if (quickToggle != null)
-            quickToggle.SetActive(true);
-    }
-
-    public void QuitGame()
-    {
-        Application.Quit();
+        // 3. Hide the Analysis
+        if (analysisObject != null)
+        {
+            analysisObject.SetActive(false);
+        }
     }
 }
