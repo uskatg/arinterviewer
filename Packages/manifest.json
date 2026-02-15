@@ -1,9 +1,9 @@
 {
   "dependencies": {
-    "com.meta.xr.depthapi": "file:C:/Users/ra24buq/Desktop/com.meta.xr.depthapi",
-    "com.meta.xr.depthapi.urp": "file:C:/Users/ra24buq/Desktop/com.meta.xr.depthapi.urp",
+    "com.meta.xr.depthapi": "file:E:/Temp/DepthAPI packages/com.meta.xr.depthapi",
+    "com.meta.xr.depthapi.urp": "file:E:/Temp/DepthAPI packages/com.meta.xr.depthapi.urp",
     "com.meta.xr.sdk.all": "83.0.4",
-    "com.meta.xr.sdk.sharedassets": "file:C:/Users/ra24buq/Desktop/com.meta.xr.sdk.sharedassets@f85aa98b1cc2",
+    "com.meta.xr.sdk.sharedassets": "file:E:/Temp/DepthAPI packages/com.meta.xr.sdk.sharedassets@f85aa98b1cc2",
     "com.unity.2d.enhancers": "1.0.0",
     "com.unity.ai.assistant": "1.6.0-pre.2",
     "com.unity.ai.generators": "1.6.0-pre.2",
@@ -22,7 +22,6 @@
     "com.unity.xr.interaction.toolkit": "3.3.1",
     "com.unity.xr.management": "4.5.4",
     "com.unity.xr.meta-openxr": "2.4.0",
-    "com.unity.xr.oculus": "4.5.2",
     "com.unity.xr.openxr": "1.16.1",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",

@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5a46bda3295124c99b0e6537ac7252, type: 3}
   m_Name: conf
   m_EditorClassIdentifier: Meta.WitAi::Meta.WitAi.Data.Configuration.WitConfiguration
-  _clientAccessToken: WG3WCZFLKMAIODPSJL26FHKFUXQOFM4U
+  _clientAccessToken: XBZFZBO6AYTCTCBUYDBDXDK4SBQLW4LJ
   editorVersionTag: 
   buildVersionTag: 
   _appInfo:
     name: arinterviewer
-    id: 1571886177421681
+    id: 1249148923810246
     lang: en
     isPrivate: 0
-    createdAt: 2026-01-26T06:39:20-0800
+    createdAt: 2026-02-15T02:29:27-0800
     trainingStatus: 1
     lastTrainDuration: 0
     lastTrainedAt: 1969-12-31T16:00:00-0800

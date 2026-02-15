@@ -1363,6 +1363,7 @@ GameObject:
   m_Component:
   - component: {fileID: 259890519}
   - component: {fileID: 259890520}
+  - component: {fileID: 259890521}
   m_Layer: 3
   m_Name: Analysis
   m_TagString: Untagged
@@ -1419,6 +1420,24 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &259890521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 259890518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8903e6677edba544e9a81a10bf48ec7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnalysisReportUI
+  ratingScoreText: {fileID: 1606642418}
+  feedbackSummaryText: {fileID: 1626064755}
+  strengthsText: {fileID: 2116539917}
+  areasToImproveText: {fileID: 2001860026}
+  missionText: {fileID: 756127384}
+  interviewManager: {fileID: 855046633}
 --- !u!224 &274885592 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5877997099728537916, guid: ab9e0a62c7bd05742b82217187604b90, type: 3}
@@ -2322,6 +2341,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 584963121840515465, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 862963083623200779, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       propertyPath: m_LocalPosition.z
       value: -0.25
@@ -2337,6 +2360,14 @@ PrefabInstance:
     - target: {fileID: 3018736016298088098, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       propertyPath: m_LocalPosition.z
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3866970050563294447, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: enableVisemeTestKeys
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3866970050563294447, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: visemeTestKeys.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4113561539593032929, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2402,12 +2433,32 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5911426385505622169, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: backendUrl
+      value: http://192.168.2.107:8000/v1/interview
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911426385505622169, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: audioAnalyzer
+      value: 
+      objectReference: {fileID: 855046630}
     - target: {fileID: 5954002125063443867, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       propertyPath: follow
       value: 0.274
       objectReference: {fileID: 0}
+    - target: {fileID: 6696853941004895437, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: enableVisemeTestKeys
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6696853941004895437, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: visemeTestKeys.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6793914090109687065, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7441189304856960717, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7774098898043339543, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
@@ -2458,6 +2509,26 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8723612592362213402, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: provider
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8723612592362213402, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: showVisemes
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8723612592362213402, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: audioLoopback
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8723612592362213402, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: enableTouchInput
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8723612592362213402, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      propertyPath: enableKeyboardInput
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8901400606638418562, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       propertyPath: smooth
       value: 10.7
@@ -2492,6 +2563,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4755624280878080281, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 506446939}
+    - targetCorrespondingSourceObject: {fileID: 9079340177013742513, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 855046630}
   m_SourcePrefab: {fileID: 100100000, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
 --- !u!224 &430222520 stripped
 RectTransform:
@@ -5162,6 +5236,40 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &855046626 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9079340177013742513, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+  m_PrefabInstance: {fileID: 427836188}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &855046630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 855046626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ee0c429b69c0c046804319ce6ab55b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioAnalyzer
+  showDebugLogs: 1
+  openAIApiKey: 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
+  volumeThreshold: 0.02
+  pitchVarianceThreshold: 5
+  wpmFastThreshold: 160
+  wpmSlowThreshold: 110
+--- !u!114 &855046633 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5911426385505622169, guid: 25fc115febe8ee34d863a66f945d8cb5, type: 3}
+  m_PrefabInstance: {fileID: 427836188}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 855046626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1de31d773782d0143b0629c0b832c3c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InterviewManager
 --- !u!1 &859687210
 GameObject:
   m_ObjectHideFlags: 0
@@ -12507,7 +12615,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6b96759ad368794da78dff0b7f67f0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraRig: {fileID: 0}
 --- !u!114 &1597325403
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16683,9 +16790,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27cb7dd9e0476431e969beabbec69218, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuScript
-  menuObject: {fileID: 0}
-  interviewObject: {fileID: 0}
-  analysisObject: {fileID: 0}
+  menuObject: {fileID: 8966788071135991539}
+  interviewObject: {fileID: 319474335}
+  analysisObject: {fileID: 259890518}
 --- !u!224 &269822045990655493
 RectTransform:
   m_ObjectHideFlags: 0

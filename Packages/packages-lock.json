@@ -1,13 +1,13 @@
 {
   "dependencies": {
     "com.meta.xr.depthapi": {
-      "version": "file:C:/Users/ra24buq/Desktop/com.meta.xr.depthapi",
+      "version": "file:E:/Temp/DepthAPI packages/com.meta.xr.depthapi",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "com.meta.xr.depthapi.urp": {
-      "version": "file:C:/Users/ra24buq/Desktop/com.meta.xr.depthapi.urp",
+      "version": "file:E:/Temp/DepthAPI packages/com.meta.xr.depthapi.urp",
       "depth": 0,
       "source": "local",
       "dependencies": {}
@@ -93,7 +93,7 @@
       "url": "https://packages.unity.com"
     },
     "com.meta.xr.sdk.sharedassets": {
-      "version": "file:C:/Users/ra24buq/Desktop/com.meta.xr.sdk.sharedassets@f85aa98b1cc2",
+      "version": "file:E:/Temp/DepthAPI packages/com.meta.xr.sdk.sharedassets@f85aa98b1cc2",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -532,15 +532,6 @@
         "com.unity.xr.management": "4.4.0",
         "com.unity.xr.arfoundation": "6.4.0",
         "com.unity.xr.compositionlayers": "2.2.0"
-      },
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.xr.oculus": {
-      "version": "4.5.2",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.xr.management": "4.4.0"
       },
       "url": "https://packages.unity.com"
     },
