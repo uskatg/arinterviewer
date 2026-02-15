@@ -5254,7 +5254,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioAnalyzer
   showDebugLogs: 1
-  openAIApiKey: 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
+  openAIApiKey: 
   volumeThreshold: 0.02
   pitchVarianceThreshold: 5
   wpmFastThreshold: 160
