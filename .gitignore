@@ -99,5 +99,8 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
 # API Key
-Assets/Resources/openai_api_key.txt
-Assets/Resources/openai_api_key.txt.meta
+Assets/Resources/api-key.txt
+Assets/Resources/api-key.txt.meta
+
+# Recovery Folder
+Assets/_Recovery

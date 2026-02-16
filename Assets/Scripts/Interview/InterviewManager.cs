@@ -14,10 +14,8 @@ using System.Text.RegularExpressions;
 
 public class InterviewManager : MonoBehaviour
 {
-    [Header("Configuration")]
-    public string backendUrl = "http://10.163.65.59:8000/v1/interview";
-
-    [Header("Component Reference")]
+    [Header("IP Configuration")]
+    public string backendUrl;
     public TTSSpeaker ttsSpeaker;
     public AudioAnalyzer audioAnalyzer;
 

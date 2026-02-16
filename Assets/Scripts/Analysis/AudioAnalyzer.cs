@@ -1,381 +1,216 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 using NWaves.FeatureExtractors;
 using NWaves.FeatureExtractors.Options;
 
 public class AudioAnalyzer : MonoBehaviour
 {
-    [Header("Configuration")]
-    public bool showDebugLogs = true;
-    [Tooltip("Enter your OpenAI API Key here (sk-...)")]
-    public string openAIApiKey = "";
+    // --- CALIBRATION STATE ---
+    public bool IsCalibrated { get; private set; }
+    public float BaselineVolume { get; private set; } = 0.05f;
+    public float BaselinePitchSpread { get; private set; } = 20.0f;
+    public float BaselineWPM { get; private set; } = 130f;
 
-    [Header("Analysis Thresholds")]
-    public float volumeThreshold = 0.02f;
-    public float pitchVarianceThreshold = 5.0f;
-    public float wpmFastThreshold = 160f;
-    public float wpmSlowThreshold = 110f;
-
-    // Used by InterviewManager (transcript, voiceReport)
     public Action<string, string> OnTranscriptionComplete;
+    public Action<bool, string> OnCalibrationComplete;
 
+    private string _apiKey;
     private PitchExtractor _pitchExtractor;
-
-    // Calibration
-    private bool _hasCalibrated;
-    private float _baseVolume;
-    private float _basePitchSpread;
-
-    // Timing
     private float _recordingStartTime;
     private float _speakingDuration;
-
-    // Live tracking
-    private readonly List<float> _rmsHistory = new List<float>(128);
-    private readonly List<float> _pitchHistory = new List<float>(128);
+    private readonly List<float> _rmsHistory = new List<float>();
+    private readonly List<float> _pitchHistory = new List<float>();
     private Coroutine _liveTrackingCo;
     private bool _isRecording;
-
-    // Mic
     private string _micDevice;
     private AudioClip _clip;
-    private const int MaxRecordSeconds = 240;
     private const int SampleRate = 16000;
 
     private void Awake()
     {
-        _pitchExtractor = new PitchExtractor(new PitchOptions
-        {
-            SamplingRate = SampleRate,
-            LowFrequency = 80,
-            HighFrequency = 400
-        });
+        _pitchExtractor = new PitchExtractor(new PitchOptions { SamplingRate = SampleRate, LowFrequency = 80, HighFrequency = 400 });
+        LoadAPIKey();
+    }
+
+    private void LoadAPIKey()
+    {
+        // Looks for key at Assets/Resources/api-key.txt
+        TextAsset keyFile = Resources.Load<TextAsset>("api-key");
+        _apiKey = keyFile.text.Trim();
     }
 
     public void StartRecording()
     {
-        if (Microphone.devices == null || Microphone.devices.Length == 0)
-        {
-            Debug.LogError("AudioAnalyzer: No microphone found.");
-            return;
-        }
+        if (Microphone.devices.Length == 0) return;
 
         _micDevice = Microphone.devices[0];
-        _clip = Microphone.Start(_micDevice, false, MaxRecordSeconds, SampleRate);
-
+        _clip = Microphone.Start(_micDevice, false, 300, SampleRate);
         _recordingStartTime = Time.time;
         _isRecording = true;
+
         _rmsHistory.Clear();
         _pitchHistory.Clear();
 
-        if (_liveTrackingCo != null)
-        {
-            StopCoroutine(_liveTrackingCo);
-        }
+        if (_liveTrackingCo != null) StopCoroutine(_liveTrackingCo);
         _liveTrackingCo = StartCoroutine(LiveTrackingRoutine());
-
-        if (showDebugLogs)
-        {
-            Debug.Log("AudioAnalyzer: Recording started on " + _micDevice);
-        }
     }
 
-    public void StopRecordingAndAnalyze(bool isCalibrationRound = false)
+    public void StopRecordingAndAnalyze(bool isCalibration = false)
     {
-        if (!_isRecording)
-            return;
+        if (!_isRecording) return;
 
         int micPos = Microphone.GetPosition(_micDevice);
         Microphone.End(_micDevice);
-
-        _speakingDuration = Time.time - _recordingStartTime;
         _isRecording = false;
+        _speakingDuration = Time.time - _recordingStartTime;
 
-        if (_liveTrackingCo != null)
+        if (_liveTrackingCo != null) StopCoroutine(_liveTrackingCo);
+
+        if (_clip == null || _speakingDuration < 0.5f)
         {
-            StopCoroutine(_liveTrackingCo);
-            _liveTrackingCo = null;
-        }
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"AudioAnalyzer: Stopped. Duration {_speakingDuration:F2}s (micPos={micPos}).");
-        }
-
-        // Trim clip to actual length
-        if (micPos > 0 && _clip != null)
-        {
-            float[] buffer = new float[micPos];
-            _clip.GetData(buffer, 0);
-
-            var trimmed = AudioClip.Create("Speech", micPos, 1, SampleRate, false);
-            trimmed.SetData(buffer, 0);
-            _clip = trimmed;
-        }
-
-        if (_clip == null)
-        {
-            if (showDebugLogs) Debug.LogWarning("AudioAnalyzer: No clip to analyze.");
-            OnTranscriptionComplete?.Invoke("[No audio]", "[Audio Analysis: N/A]");
+            if (isCalibration) OnCalibrationComplete?.Invoke(false, "Audio too short.");
+            else OnTranscriptionComplete?.Invoke("", "[Audio too short]");
             return;
         }
 
-        // Fire and forget
-        _ = ProcessWithWhisperAsync(_clip, isCalibrationRound);
+        StartCoroutine(ProcessWithWhisperRoutine(_clip, isCalibration, micPos));
     }
 
-    private async Task ProcessWithWhisperAsync(AudioClip clip, bool isCalibrationRound)
+    private IEnumerator ProcessWithWhisperRoutine(AudioClip clip, bool isCalibration, int micPos)
     {
-        if (string.IsNullOrEmpty(openAIApiKey))
+        if (string.IsNullOrEmpty(_apiKey))
         {
-            Debug.LogError("AudioAnalyzer: Missing OpenAI API key.");
-            return;
+            Debug.LogError("[AudioAnalyzer] API Key is missing.");
+            if (isCalibration) OnCalibrationComplete?.Invoke(false, "API Key Missing");
+            yield break;
         }
 
-        if (clip.length < 0.5f || _speakingDuration < 0.5f)
+        byte[] wavBytes = EncodeToWAV(clip, micPos);
+
+        // Prepare request
+        WWWForm form = new WWWForm();
+        form.AddBinaryData("file", wavBytes, "audio.wav", "audio/wav");
+        form.AddField("model", "whisper-1");
+        form.AddField("language", "en");
+
+        using (UnityWebRequest req = UnityWebRequest.Post("https://api.openai.com/v1/audio/transcriptions", form))
         {
-            if (showDebugLogs)
-                Debug.Log("AudioAnalyzer: Audio too short, skipping cloud transcription.");
+            req.SetRequestHeader("Authorization", "Bearer " + _apiKey);
 
-            OnTranscriptionComplete?.Invoke("[Audio too short]", "[Audio Analysis: N/A]");
-            return;
-        }
+            yield return req.SendWebRequest();
 
-        var wavBytes = EncodeToWAV(clip);
-        string transcript = "";
-
-        try
-        {
-            using (var client = new HttpClient())
+            if (req.result == UnityWebRequest.Result.Success)
             {
-                client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", openAIApiKey);
-
-                using (var content = new MultipartFormDataContent())
+                string transcript = "";
+                try
                 {
-                    var audioContent = new ByteArrayContent(wavBytes);
-                    audioContent.Headers.ContentType = MediaTypeHeaderValue.Parse("audio/wav");
-                    content.Add(audioContent, "file", "audio.wav");
-                    content.Add(new StringContent("gpt-4o-mini-transcribe"), "model");
-                    content.Add(new StringContent("en"), "language");
+                    var parsed = JsonUtility.FromJson<WhisperResponse>(req.downloadHandler.text);
+                    transcript = parsed?.text ?? "";
+                }
+                catch { /* Ignored */ }
 
-                    var response = await client.PostAsync("https://api.openai.com/v1/audio/transcriptions", content);
-                    var responseText = await response.Content.ReadAsStringAsync();
+                // Calculate stats
+                float avgVolume = ComputeAverage(_rmsHistory);
+                float avgPitch = ComputeAverage(_pitchHistory);
+                float pitchSpread = ComputeStdDev(_pitchHistory, avgPitch);
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var parsed = JsonUtility.FromJson<WhisperResponse>(responseText);
-                        transcript = parsed != null ? parsed.text : "";
-                    }
-                    else
-                    {
-                        Debug.LogError("Whisper HTTP error: " + response.StatusCode + "\n" + responseText);
-                        transcript = "[STT Error]";
-                    }
+                int wordCount = transcript.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                float wpm = (_speakingDuration > 0) ? (wordCount / _speakingDuration) * 60f : 0f;
+
+                if (isCalibration)
+                {
+                    BaselineVolume = avgVolume;
+                    BaselinePitchSpread = pitchSpread;
+                    BaselineWPM = wpm;
+                    IsCalibrated = true;
+
+                    string msg = $"Volume: {avgVolume:F3}\nPitch: {pitchSpread:F1}\nSpeed: {wpm:F0} WPM";
+                    OnCalibrationComplete?.Invoke(true, msg);
+                }
+                else
+                {
+                    string voiceReport = GenerateVoiceReport(avgVolume, pitchSpread, wpm);
+                    OnTranscriptionComplete?.Invoke(transcript, voiceReport);
                 }
             }
+            else
+            {
+                string err = $"API Error: {req.responseCode}";
+                if (isCalibration) OnCalibrationComplete?.Invoke(false, err);
+                else OnTranscriptionComplete?.Invoke("[Connection Error]", "");
+            }
         }
-        catch (Exception e)
-        {
-            Debug.LogError("Whisper exception: " + e.Message);
-            transcript = "[STT Error]";
-        }
+    }
 
-        // Word count / WPM
-        int wordCount = 0;
-        if (!string.IsNullOrEmpty(transcript) && transcript != "[STT Error]")
-        {
-            // basic split, avoid LINQ
-            var parts = transcript.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            wordCount = parts.Length;
-        }
+    private string GenerateVoiceReport(float vol, float pitchDev, float wpm)
+    {
+        float baseVol = IsCalibrated ? BaselineVolume : 0.05f;
+        float baseWpm = IsCalibrated ? BaselineWPM : 130f;
 
-        float wpm = 0f;
-        if (_speakingDuration > 0.1f && wordCount > 0)
-        {
-            wpm = (wordCount / _speakingDuration) * 60f;
-        }
+        string volLabel = (vol > baseVol + 0.02f) ? "Loud" : (vol < baseVol - 0.02f) ? "Quiet" : "Normal";
+        string wpmLabel = (wpm > baseWpm + 20f) ? "Fast" : (wpm < baseWpm - 20f) ? "Slow" : "Good";
 
-        // Aggregate live data
-        float avgVolume = ComputeAverage(_rmsHistory);
-        float avgPitch = ComputeAverage(_pitchHistory);
-        float pitchSpread = ComputeStdDev(_pitchHistory, avgPitch);
-
-        string voiceReport;
-
-        if (isCalibrationRound)
-        {
-            _baseVolume = avgVolume;
-            _basePitchSpread = pitchSpread;
-            _hasCalibrated = true;
-            voiceReport = $"Calibration done. Baseline volume={avgVolume:F3}, pitch spread={pitchSpread:F1}";
-        }
-        else if (_hasCalibrated)
-        {
-            float volDelta = avgVolume - _baseVolume;
-
-            string volLabel;
-            if (volDelta > volumeThreshold) volLabel = "Loud/Confident";
-            else if (volDelta < -volumeThreshold) volLabel = "Quiet/Shy";
-            else volLabel = "Normal Volume";
-
-            string toneLabel = pitchSpread > _basePitchSpread + pitchVarianceThreshold ? "Expressive" : "Monotone";
-
-            string paceLabel;
-            if (wpm > wpmFastThreshold) paceLabel = "Fast";
-            else if (wpm < wpmSlowThreshold) paceLabel = "Slow";
-            else paceLabel = "Good Pace";
-
-            voiceReport =
-                $"[Audio Analysis: Volume: {volLabel} | Tone: {toneLabel} | Pace: {wpm:F0} WPM ({paceLabel})]";
-        }
-        else
-        {
-            voiceReport =
-                $"[Audio Analysis (Uncalibrated): Volume={avgVolume:F3}, PitchSpread={pitchSpread:F1}, WPM={wpm:F0}]";
-        }
-
-        OnTranscriptionComplete?.Invoke(transcript, voiceReport);
+        return $"[Audio: {volLabel} | Speed {wpmLabel} ({wpm:F0})]";
     }
 
     private IEnumerator LiveTrackingRoutine()
     {
-        // Simple 300 ms polling of the latest chunk
-        var wait = new WaitForSeconds(0.3f);
-
+        var wait = new WaitForSeconds(0.2f);
         while (_isRecording)
         {
             yield return wait;
-
+            if (_clip == null) continue;
             int micPos = Microphone.GetPosition(_micDevice);
-            if (micPos <= 0 || _clip == null)
-                continue;
+            if (micPos < SampleRate / 4) continue;
 
-            float[] samples = new float[micPos];
-            _clip.GetData(samples, 0);
+            float[] chunk = new float[SampleRate / 4];
+            _clip.GetData(chunk, micPos - (SampleRate / 4));
 
-            int chunkSize = Mathf.Min(micPos, SampleRate / 3); // ~0.33s
-            if (chunkSize <= 0 || micPos < chunkSize)
-                continue;
+            float sum = 0;
+            for (int i = 0; i < chunk.Length; i += 10) sum += chunk[i] * chunk[i];
+            float rms = Mathf.Sqrt(sum / (chunk.Length / 10));
+            if (rms > 0.001f) _rmsHistory.Add(rms);
 
-            var chunk = new float[chunkSize];
-            Array.Copy(samples, micPos - chunkSize, chunk, 0, chunkSize);
-
-            // RMS (downsample a bit)
-            double sum = 0;
-            int count = 0;
-            for (int i = 0; i < chunk.Length; i += 4)
+            if (_pitchHistory.Count < 2048)
             {
-                float v = chunk[i];
-                sum += v * v;
-                count++;
-            }
-
-            if (count > 0)
-            {
-                float rms = Mathf.Sqrt((float)(sum / count));
-                if (rms > 0.001f)
-                {
-                    _rmsHistory.Add(rms);
-                }
-            }
-
-            // Pitch
-            var frames = _pitchExtractor.ComputeFrom(chunk);
-            foreach (var frame in frames)
-            {
-                if (frame != null && frame.Length > 0 && frame[0] > 0f)
-                {
-                    _pitchHistory.Add(frame[0]);
-                }
+                var frames = _pitchExtractor.ComputeFrom(chunk);
+                foreach (var f in frames) if (f.Length > 0 && f[0] > 0) _pitchHistory.Add(f[0]);
             }
         }
     }
 
-    private static float ComputeAverage(List<float> values)
+    private byte[] EncodeToWAV(AudioClip clip, int micPos)
     {
-        if (values == null || values.Count == 0)
-            return 0f;
-
-        float sum = 0f;
-        for (int i = 0; i < values.Count; i++)
-        {
-            sum += values[i];
-        }
-
-        return sum / values.Count;
-    }
-
-    private static float ComputeStdDev(List<float> values, float mean)
-    {
-        if (values == null || values.Count == 0)
-            return 0f;
-
-        float sumSq = 0f;
-        for (int i = 0; i < values.Count; i++)
-        {
-            float d = values[i] - mean;
-            sumSq += d * d;
-        }
-
-        return Mathf.Sqrt(sumSq / values.Count);
-    }
-
-    // Bare-bones WAV encoding so Whisper accepts it
-    private byte[] EncodeToWAV(AudioClip clip)
-    {
-        float[] samples = new float[clip.samples * clip.channels];
+        if (micPos <= 0) micPos = clip.samples;
+        float[] samples = new float[micPos * clip.channels];
         clip.GetData(samples, 0);
 
         short[] intData = new short[samples.Length];
         byte[] bytesData = new byte[samples.Length * 2];
-
-        const float rescaleFactor = 32767f;
-
         for (int i = 0; i < samples.Length; i++)
         {
-            intData[i] = (short)(samples[i] * rescaleFactor);
-            var byteArr = BitConverter.GetBytes(intData[i]);
-            byteArr.CopyTo(bytesData, i * 2);
+            intData[i] = (short)(samples[i] * 32767f);
+            System.BitConverter.GetBytes(intData[i]).CopyTo(bytesData, i * 2);
         }
 
-        using (var memoryStream = new System.IO.MemoryStream())
-        using (var writer = new System.IO.BinaryWriter(memoryStream))
+        using (var ms = new System.IO.MemoryStream())
+        using (var writer = new System.IO.BinaryWriter(ms))
         {
-            // RIFF header
-            writer.Write(Encoding.UTF8.GetBytes("RIFF"));
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
             writer.Write(36 + bytesData.Length);
-            writer.Write(Encoding.UTF8.GetBytes("WAVE"));
-
-            // fmt chunk
-            writer.Write(Encoding.UTF8.GetBytes("fmt "));
-            writer.Write(16); // Subchunk1Size
-            writer.Write((short)1); // PCM
-            writer.Write((short)clip.channels);
-            writer.Write(clip.frequency);
-            writer.Write(clip.frequency * clip.channels * 2);
-            writer.Write((short)(clip.channels * 2));
-            writer.Write((short)16); // bits per sample
-
-            // data chunk
-            writer.Write(Encoding.UTF8.GetBytes("data"));
-            writer.Write(bytesData.Length);
-            writer.Write(bytesData);
-
-            writer.Flush();
-            return memoryStream.ToArray();
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVEfmt "));
+            writer.Write(16); writer.Write((short)1); writer.Write((short)clip.channels);
+            writer.Write(16000); writer.Write(16000 * clip.channels * 2);
+            writer.Write((short)(clip.channels * 2)); writer.Write((short)16);
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
+            writer.Write(bytesData.Length); writer.Write(bytesData);
+            return ms.ToArray();
         }
     }
-
-    [Serializable]
-    private class WhisperResponse
-    {
-        public string text;
-    }
+    private static float ComputeAverage(List<float> list) { if (list.Count == 0) return 0; float s = 0; foreach (var v in list) s += v; return s / list.Count; }
+    private static float ComputeStdDev(List<float> list, float avg) { if (list.Count == 0) return 0; float s = 0; foreach (var v in list) s += (v - avg) * (v - avg); return Mathf.Sqrt(s / list.Count); }
+    [Serializable] class WhisperResponse { public string text; }
 }
