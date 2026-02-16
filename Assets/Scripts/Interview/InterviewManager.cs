@@ -136,13 +136,11 @@ public class InterviewManager : MonoBehaviour
     }
 
     // Now triggered manually by AudioAnalyzer
-    // We ignore the 'voiceReport' string and grab the numbers from the analyzer properties
     private void OnFullTranscription(string transcript, string ignoredReport)
     {
         if (string.IsNullOrEmpty(currentSessionId)) return;
         Debug.Log($"User said: {transcript}");
 
-        // Pull the stats we just calculated in AudioAnalyzer
         float vol = audioAnalyzer.LastVolume;
         float pit = audioAnalyzer.LastPitch;
         float wpm = audioAnalyzer.LastWPM;

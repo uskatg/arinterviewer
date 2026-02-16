@@ -8,13 +8,10 @@ using NWaves.FeatureExtractors.Options;
 
 public class AudioAnalyzer : MonoBehaviour
 {
-    // --- CALIBRATION STATE ---
     public bool IsCalibrated { get; private set; }
     public float BaselineVolume { get; private set; } = 0.05f;
     public float BaselinePitchSpread { get; private set; } = 20.0f;
     public float BaselineWPM { get; private set; } = 130f;
-
-    // --- NEW: PUBLIC STATS FOR INTERVIEW MANAGER ---
     public float LastVolume { get; private set; }
     public float LastPitch { get; private set; }
     public float LastWPM { get; private set; }
@@ -115,7 +112,6 @@ public class AudioAnalyzer : MonoBehaviour
                 }
                 catch { /* Ignored */ }
 
-                // --- CALCULATE STATS ---
                 float avgVolume = ComputeAverage(_rmsHistory);
                 float avgPitch = ComputeAverage(_pitchHistory);
                 float pitchSpread = ComputeStdDev(_pitchHistory, avgPitch);
@@ -123,7 +119,6 @@ public class AudioAnalyzer : MonoBehaviour
                 int wordCount = transcript.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
                 float wpm = (_speakingDuration > 0) ? (wordCount / _speakingDuration) * 60f : 0f;
 
-                // --- SAVE FOR INTERVIEW MANAGER ---
                 LastVolume = avgVolume;
                 LastPitch = avgPitch; // Using Average Pitch directly
                 LastWPM = wpm;
@@ -140,7 +135,7 @@ public class AudioAnalyzer : MonoBehaviour
                 }
                 else
                 {
-                    // Keep the old string for compatibility, but InterviewManager will ignore it
+                    // Kept compatibility, but InterviewManager ignores it
                     string voiceReport = GenerateVoiceReport(avgVolume, pitchSpread, wpm);
                     OnTranscriptionComplete?.Invoke(transcript, voiceReport);
                 }
