@@ -41,7 +41,7 @@ public class InterviewManager : MonoBehaviour
             else Debug.Log("InterviewManager: Auto-connected to AudioAnalyzer.");
         }
 
-        // Subscribe to our new Custom STT event
+        // Subscribe to our Custom STT event
         if (audioAnalyzer != null)
         {
             audioAnalyzer.OnTranscriptionComplete += OnFullTranscription;
@@ -50,7 +50,6 @@ public class InterviewManager : MonoBehaviour
         // register TTS
         if (ttsSpeaker != null)
         {
-            // when one audio finished, turn to true
             ttsSpeaker.Events.OnAudioClipPlaybackFinished.AddListener((msg) => {
                 _currentClipFinished = true;
             });
@@ -136,28 +135,37 @@ public class InterviewManager : MonoBehaviour
         }
     }
 
-    // Now triggered manually by AudioAnalyzer instead of Wit.ai
-    private void OnFullTranscription(string transcript, string voiceReport)
+    // Now triggered manually by AudioAnalyzer
+    // We ignore the 'voiceReport' string and grab the numbers from the analyzer properties
+    private void OnFullTranscription(string transcript, string ignoredReport)
     {
         if (string.IsNullOrEmpty(currentSessionId)) return;
         Debug.Log($"User said: {transcript}");
-        Debug.Log($"Voice Report: {voiceReport}");
 
-        StartCoroutine(ReplyAndGetNextRoutine(transcript, voiceReport));
+        // Pull the stats we just calculated in AudioAnalyzer
+        float vol = audioAnalyzer.LastVolume;
+        float pit = audioAnalyzer.LastPitch;
+        float wpm = audioAnalyzer.LastWPM;
+
+        StartCoroutine(ReplyAndGetNextRoutine(transcript, vol, pit, wpm));
     }
 
     private IEnumerator InitSessionRoutine()
     {
+        float baseVol = (audioAnalyzer != null) ? audioAnalyzer.BaselineVolume : 0.05f;
+        float baseWpm = (audioAnalyzer != null) ? audioAnalyzer.BaselineWPM : 130f;
+
         InterviewInitRequest req = new InterviewInitRequest
         {
             job_position = "Software Developer",
             interviewer_mode = "social",
             job_description = "Looking for a C# expert with VR experience.",
-            cv_data = GetDummyCV()
+            cv_data = GetDummyCV(),
+            baseline_volume = baseVol,
+            baseline_wpm = baseWpm
         };
 
         string json = JsonUtility.ToJson(req);
-        // Debug.Log($"Sending Init JSON: {json}");
 
         yield return PostRequest("/init", json, (response) =>
         {
@@ -169,13 +177,15 @@ public class InterviewManager : MonoBehaviour
         });
     }
 
-    private IEnumerator ReplyAndGetNextRoutine(string userText, string voiceReport)
+    private IEnumerator ReplyAndGetNextRoutine(string userText, float vol, float pit, float wpm)
     {
         InterviewReplyRequest replyReq = new InterviewReplyRequest
         {
             session_id = currentSessionId,
             user_text = userText,
-            voice_data = voiceReport
+            volume = vol,
+            pitch = pit,
+            wpm = wpm
         };
 
         yield return PostRequest("/reply", JsonUtility.ToJson(replyReq), (response) =>
@@ -207,7 +217,6 @@ public class InterviewManager : MonoBehaviour
     {
         if (ttsSpeaker == null) return;
 
-        // use regexp to split
         string[] sentences = Regex.Split(text, @"(?<=[.!?;])");
 
         foreach (var sentence in sentences)
@@ -351,8 +360,10 @@ public class InterviewManager : MonoBehaviour
     {
         public CVData cv_data;
         public string job_position;
-        public string job_description; // Optional in python, nullable string here is fine
+        public string job_description;
         public string interviewer_mode;
+        public float baseline_volume;
+        public float baseline_wpm;
     }
 
     [Serializable]
@@ -373,7 +384,7 @@ public class InterviewManager : MonoBehaviour
     {
         public string session_id;
         public string interviewer_text;
-        public string message_type; // "question" etc.
+        public string message_type;
     }
 
     [Serializable]
@@ -381,7 +392,9 @@ public class InterviewManager : MonoBehaviour
     {
         public string session_id;
         public string user_text;
-        public string voice_data;
+        public float volume;
+        public float pitch;
+        public float wpm;
     }
 
     [Serializable]
@@ -389,5 +402,17 @@ public class InterviewManager : MonoBehaviour
     {
         public string session_id;
         public string feedback;
+    }
+
+    [Serializable]
+    public class InterviewReportResponse
+    {
+        public string session_id;
+        public int score;
+        public string feedback_summary;
+        public List<string> strengths;
+        public List<string> areas_for_improvement;
+        public string mission;
+        public string voice_analysis;
     }
 }

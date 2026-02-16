@@ -12,6 +12,7 @@ public class AnalysisReportUI : MonoBehaviour
     public TextMeshProUGUI strengthsText;
     public TextMeshProUGUI areasToImproveText;
     public TextMeshProUGUI missionText;
+    public TextMeshProUGUI voiceStats;
 
     [Header("Dependencies")]
     public InterviewManager interviewManager;
@@ -83,6 +84,9 @@ public class AnalysisReportUI : MonoBehaviour
 
         if (missionText != null)
             missionText.text = data.mission;
+
+        if (voiceStats != null)
+            voiceStats.text = data.voice_analysis;
     }
 
     private void UpdateUIWithError()
@@ -111,5 +115,6 @@ public class AnalysisReportUI : MonoBehaviour
         public List<string> strengths;
         public List<string> areas_for_improvement;
         public string mission;
+        public string voice_analysis;
     }
 }

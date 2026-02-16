@@ -14,6 +14,11 @@ public class AudioAnalyzer : MonoBehaviour
     public float BaselinePitchSpread { get; private set; } = 20.0f;
     public float BaselineWPM { get; private set; } = 130f;
 
+    // --- NEW: PUBLIC STATS FOR INTERVIEW MANAGER ---
+    public float LastVolume { get; private set; }
+    public float LastPitch { get; private set; }
+    public float LastWPM { get; private set; }
+
     public Action<string, string> OnTranscriptionComplete;
     public Action<bool, string> OnCalibrationComplete;
 
@@ -37,9 +42,8 @@ public class AudioAnalyzer : MonoBehaviour
 
     private void LoadAPIKey()
     {
-        // Looks for key at Assets/Resources/api-key.txt
         TextAsset keyFile = Resources.Load<TextAsset>("api-key");
-        _apiKey = keyFile.text.Trim();
+        if (keyFile != null) _apiKey = keyFile.text.Trim();
     }
 
     public void StartRecording()
@@ -90,7 +94,6 @@ public class AudioAnalyzer : MonoBehaviour
 
         byte[] wavBytes = EncodeToWAV(clip, micPos);
 
-        // Prepare request
         WWWForm form = new WWWForm();
         form.AddBinaryData("file", wavBytes, "audio.wav", "audio/wav");
         form.AddField("model", "whisper-1");
@@ -112,13 +115,18 @@ public class AudioAnalyzer : MonoBehaviour
                 }
                 catch { /* Ignored */ }
 
-                // Calculate stats
+                // --- CALCULATE STATS ---
                 float avgVolume = ComputeAverage(_rmsHistory);
                 float avgPitch = ComputeAverage(_pitchHistory);
                 float pitchSpread = ComputeStdDev(_pitchHistory, avgPitch);
 
                 int wordCount = transcript.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
                 float wpm = (_speakingDuration > 0) ? (wordCount / _speakingDuration) * 60f : 0f;
+
+                // --- SAVE FOR INTERVIEW MANAGER ---
+                LastVolume = avgVolume;
+                LastPitch = avgPitch; // Using Average Pitch directly
+                LastWPM = wpm;
 
                 if (isCalibration)
                 {
@@ -132,6 +140,7 @@ public class AudioAnalyzer : MonoBehaviour
                 }
                 else
                 {
+                    // Keep the old string for compatibility, but InterviewManager will ignore it
                     string voiceReport = GenerateVoiceReport(avgVolume, pitchSpread, wpm);
                     OnTranscriptionComplete?.Invoke(transcript, voiceReport);
                 }
